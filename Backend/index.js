@@ -6,10 +6,16 @@ import messageRoute from "./Routes/message.js"
 import cookieParser from 'cookie-parser';
 import userRouter from "./Routes/user.js";
 import {app,server} from "./socket/socket.js";
+import path from "path"
+import cors from 'cors';
+
+app.use(cors({
+    sameSite : false,
+}));
 
 dotenv.config();
 
-
+const __dirname = path.resolve();
 const ATLAS = process.env.ATLAS_DB;
 
  export async function main(){
@@ -28,5 +34,5 @@ app.use("/api/user",userRouter);
 const PORT = process.env.PORT || 8000;
 app.use(express.json());
 server.listen(PORT,()=>{
-    console.log(`server started to listing posr ${PORT}`);
+    console.log(`server started to listing post ${PORT}`);
 })

@@ -1,12 +1,13 @@
  import Conversation from "../models/conversation.js"
  import Message from "../models/message.js"
+//  import { getReceiverSocketId, io } from "../socket/socket.js";
 export const getMessages = async (req,res) => {
    try{
     const {id  : userToChatId} = req.params;
     const senderId = req.user._id;
     const conversation = await Conversation.findOne({
       participents :{$all :[senderId , userToChatId]}
-    }).populate("message");
+    }).populate("messages");
     if(!conversation){
       return res.status(200).json([]);
     }
@@ -21,10 +22,11 @@ export const getMessages = async (req,res) => {
 
 export const sendMassage = async (req,res) =>{
     try{
-    const { message } = req.body;
+    const {message} = req.body;
+    
     const { id : recieverId} = req.params;
     const senderId = req.user._id;
-  
+    
     let conversation = await Conversation.findOne({
       participents : {$all : [senderId,recieverId]},
     })
@@ -33,30 +35,26 @@ export const sendMassage = async (req,res) =>{
       conversation = await Conversation.create({
         participents:[senderId,recieverId],
       })
-      
-
       const newMessage = new Message({
         senderId,
         recieverId,
-        message,
+        message
       })
-      console.log(newMessage)
-    if(newMessage){
-      Conversation.messages.push(newMessage._id);
-      
+      await newMessage.save();
+    if(newMessage){ 
+      conversation.messages.push(newMessage._id);
     }
+   
     await conversation.save();
-		await newMessage.save();
+   
     // await Promise.all([conversation.save(), newMessage.save()]);
 
     // SOCKET IO FUNCTIONALITY WILL GO HERE
-		const receiverSocketId = getReceiverSocketId(receiverId);
+		const receiverSocketId = getReceiverSocketId(recieverId);
 		if (receiverSocketId) {
 			// io.to(<socket_id>).emit() used to send events to specific client
 			io.to(receiverSocketId).emit("newMessage", newMessage);
 		}
-
-    
       res.status(201).json(newMessage);
     }
     }catch(error){
